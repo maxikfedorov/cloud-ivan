@@ -1,0 +1,17 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "data/.gitkeep": true,
+        "models/checkpoints/.gitkeep": true,
+        "src/.gitkeep": true
+    },
+    "hide-files.files": [
+        "data/.gitkeep",
+        "models/checkpoints/.gitkeep",
+        "src/.gitkeep"
+    ]
+}
