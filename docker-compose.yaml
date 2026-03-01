@@ -32,6 +32,7 @@ services:
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password123
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://127.0.0.1:3000"
     ports:
       - "9000:9000" 
       - "9001:9001" 
@@ -76,9 +77,25 @@ services:
       - DATABASE_URL=postgresql+asyncpg://admin:password@postgres:5432/yolo_db
       - REDIS_URL=redis://redis:6379/0
       - S3_ENDPOINT_URL=http://minio:9000
+      - S3_PUBLIC_ENDPOINT_URL=http://localhost:9000
       - S3_ACCESS_KEY=admin
       - S3_SECRET_KEY=password123
       - S3_BUCKET_NAME=media-bucket
+
+  # 6. Наш Next.js Фронтенд
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: yolo_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    environment:
+      # Внутри Docker-сети фронтенд (на этапе SSR) будет обращаться к API по имени контейнера
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 
 volumes:
   pg_data:
