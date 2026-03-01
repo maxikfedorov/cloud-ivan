@@ -52,6 +52,9 @@ class UniversalMediaProcessor:
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
+        width = width if width % 2 == 0 else width - 1
+        height = height if height % 2 == 0 else height - 1
+        
         # Временный файл для сырого вывода OpenCV
         temp_output = output_path.with_name(f"temp_{output_path.name}")
         
@@ -62,6 +65,10 @@ class UniversalMediaProcessor:
             ret, frame = cap.read()
             if not ret:
                 break
+            
+            # Если исходный кадр был нечетным, обрезаем его на 1 пиксель
+            if frame.shape[1] != width or frame.shape[0] != height:
+                 frame = frame[:height, :width]
                 
             result_frame = filter_func(frame)
             out.write(result_frame)

@@ -27,7 +27,10 @@ AVAILABLE_FILTERS = {
     "grayscale": OpenCVFilters.grayscale,
     "blur": OpenCVFilters.gaussian_blur,
     "canny": OpenCVFilters.canny_edges,
-    "pixelate": OpenCVFilters.pixelate
+    "pixelate": OpenCVFilters.pixelate,
+    "invert": OpenCVFilters.invert_colors,        # Добавлено
+    "sepia": OpenCVFilters.sepia,                 # Добавлено
+    "contrast": OpenCVFilters.enhance_contrast    # Добавлено
 }
 
 def process_media_task(input_object_name: str, output_object_name: str, filter_type: str):
