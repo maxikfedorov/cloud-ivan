@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { ChevronsLeftRight } from 'lucide-react';
 
 interface BeforeAfterSliderProps {
   beforeImage: string;
@@ -11,8 +12,9 @@ export function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAfterSlider
   const [sliderPosition, setSliderPosition] = useState(50);
 
   return (
-    <div className="relative w-full aspect-video overflow-hidden rounded-xl bg-slate-900 select-none group">
-      {/* "Стало" (Базовое изображение) */}
+    <div className="relative w-full aspect-video overflow-hidden rounded-xl bg-slate-100 select-none group border border-slate-200">
+      
+      {/* "Стало" (Базовое изображение - Результат обработки) */}
       <img 
         src={afterImage} 
         alt="Результат" 
@@ -31,7 +33,7 @@ export function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAfterSlider
         />
       </div>
 
-      {/* Невидимый ползунок (Native Input Range) и Визуальная линия */}
+      {/* Интерактивный слой (Input) */}
       <div className="absolute inset-0 w-full h-full">
         <input
           type="range"
@@ -39,29 +41,32 @@ export function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAfterSlider
           max="100"
           value={sliderPosition}
           onChange={(e) => setSliderPosition(Number(e.target.value))}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-10 m-0 p-0"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20 m-0 p-0"
+          aria-label="Слайдер сравнения изображений"
         />
-        {/* Визуальная разделяющая полоса */}
+        
+        {/* Визуальная разделяющая полоса и ползунок */}
         <div
-          className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_15px_rgba(0,0,0,0.5)] z-0 pointer-events-none flex items-center justify-center transition-transform"
+          className="absolute top-0 bottom-0 w-[1.5px] bg-white/90 shadow-[0_0_8px_rgba(0,0,0,0.2)] z-10 pointer-events-none flex items-center justify-center"
           style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
         >
-          {/* Круглая ручка по центру */}
-          <div className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center ring-2 ring-slate-200">
-            <div className="flex gap-1">
-              <div className="w-0.5 h-3 bg-slate-400 rounded-full" />
-              <div className="w-0.5 h-3 bg-slate-400 rounded-full" />
-            </div>
+          {/* Элегантная ручка-контроллер */}
+          <div className="w-7 h-7 bg-white/80 backdrop-blur-md rounded-full shadow-md flex items-center justify-center border border-slate-200/50 text-slate-600 transition-transform group-hover:scale-110 group-active:scale-95 group-active:bg-blue-50 group-active:text-blue-600">
+            <ChevronsLeftRight className="w-3.5 h-3.5" />
           </div>
         </div>
       </div>
       
-      {/* Подсказки (исчезают при наведении) */}
-      <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-md text-sm font-medium opacity-100 transition-opacity group-hover:opacity-0 pointer-events-none">
-        Было
+      {/* Минималистичные лейблы, которые не кричат */}
+      <div className="absolute top-4 left-4 z-10 pointer-events-none">
+        <span className="bg-black/40 backdrop-blur-md text-white/90 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-widest shadow-sm">
+          Было
+        </span>
       </div>
-      <div className="absolute top-4 right-4 bg-blue-600/80 backdrop-blur-sm text-white px-3 py-1 rounded-md text-sm font-medium opacity-100 transition-opacity group-hover:opacity-0 pointer-events-none">
-        Стало
+      <div className="absolute top-4 right-4 z-10 pointer-events-none">
+        <span className="bg-blue-600/80 backdrop-blur-md text-white/90 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-widest shadow-sm">
+          Стало
+        </span>
       </div>
     </div>
   );

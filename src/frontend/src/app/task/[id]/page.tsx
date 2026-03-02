@@ -6,10 +6,11 @@ import Link from 'next/link';
 import { videoApi } from '@/lib/api';
 import { VideoTask } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download, Image as ImageIcon, Video, Calendar, Activity, AlertCircle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, Download, Image as ImageIcon, Video, Calendar, Activity, AlertCircle, FileCheck2 } from 'lucide-react';
 import { BeforeAfterSlider } from '@/components/shared/BeforeAfterSlider';
+import { cn } from '@/lib/utils';
 
 export default function TaskDetailPage() {
   const params = useParams();
@@ -36,146 +37,178 @@ export default function TaskDetailPage() {
     fetchTaskDetails();
   }, [taskId]);
 
-  // Состояние 1: Загрузка
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
-        <div className="h-10 w-40 bg-slate-200 animate-pulse rounded-md" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 h-[60vh] bg-slate-200 animate-pulse rounded-2xl" />
-          <div className="h-96 bg-slate-200 animate-pulse rounded-2xl" />
+      <div className="max-w-7xl mx-auto space-y-6">
+        <Skeleton className="h-8 w-48 rounded-lg" />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <Skeleton className="lg:col-span-3 h-[70vh] rounded-xl" />
+          <Skeleton className="h-96 rounded-xl" />
         </div>
       </div>
     );
   }
 
-  // Состояние 2: Ошибка / Не найдено
   if (!task) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh] space-y-4">
-        <AlertCircle className="w-16 h-16 text-slate-400" />
-        <h2 className="text-2xl font-semibold text-slate-700">Задача не найдена</h2>
-        <p className="text-slate-500">Возможно, она была удалена или ссылка устарела.</p>
+      <div className="flex flex-col items-center justify-center h-[60vh] space-y-4 text-slate-500">
+        <AlertCircle className="w-12 h-12 opacity-20" />
+        <h2 className="text-xl font-medium text-slate-900 tracking-tight">Задача не найдена</h2>
+        <p className="text-sm">Возможно, файл был удален.</p>
         <Link href="/">
-          <Button className="mt-4"><ArrowLeft className="w-4 h-4 mr-2" /> Вернуться на главную</Button>
+          <Button variant="outline" className="mt-4 bg-white"><ArrowLeft className="w-4 h-4 mr-2" /> Назад в медиатеку</Button>
         </Link>
       </div>
     );
   }
 
-  // Логика определения типа медиа (фундаментально просто и надежно)
   const isVideo = task.original_filename.match(/\.(mp4|mov|avi|mkv)$/i);
   const isCompleted = task.status === 'COMPLETED';
 
+  // Вспомогательная функция для рендера статуса в стиле "Инспектора"
+  const renderStatusIndicator = (status: string) => {
+    switch(status) {
+      case 'COMPLETED':
+        return (
+          <div className="flex items-center text-green-700 bg-green-50 px-2 py-1 rounded text-xs font-semibold">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2" /> Успешно
+          </div>
+        );
+      case 'FAILED':
+        return (
+          <div className="flex items-center text-red-700 bg-red-50 px-2 py-1 rounded text-xs font-semibold">
+            <div className="w-1.5 h-1.5 rounded-full bg-red-500 mr-2" /> Ошибка
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center text-blue-700 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 animate-pulse" /> В обработке
+          </div>
+        );
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
-      {/* Header (Навигация и Скачивание) */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-12">
+      
+      {/* Навигационный Header */}
+      <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
         <Link href="/">
-          <Button variant="ghost" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 -ml-4">
+          <Button variant="ghost" className="text-slate-500 hover:text-slate-900 hover:bg-slate-100 -ml-4 h-8 px-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Назад к истории
+            Назад
           </Button>
         </Link>
-        
-        {isCompleted && task.download_url && (
-          <a href={task.download_url} download={task.original_filename} target="_blank" rel="noopener noreferrer">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shadow-md">
-              <Download className="w-5 h-5 mr-2" />
-              Скачать результат
-            </Button>
-          </a>
-        )}
+        <div className="text-sm font-medium text-slate-900 truncate px-4">
+          Просмотр: {task.original_filename}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Главная секция: Медиа (Занимает 2 колонки) */}
-        <div className="lg:col-span-2 space-y-4">
-          <Card className="p-1 overflow-hidden bg-white shadow-sm border-slate-200 rounded-2xl">
-            {isCompleted && task.original_file_url && task.download_url ? (
-              isVideo ? (
-                // Рендер для Видео: Два плеера
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 bg-slate-900 p-2 rounded-xl">
-                  <div className="relative">
-                    <Badge variant="secondary" className="absolute top-2 left-2 z-10 bg-black/50 text-white border-none">Оригинал</Badge>
-                    <video src={task.original_file_url} controls className="w-full aspect-video rounded-lg bg-black" />
-                  </div>
-                  <div className="relative">
-                    <Badge className="absolute top-2 left-2 z-10 bg-blue-600 border-none">Результат</Badge>
-                    <video src={task.download_url} controls className="w-full aspect-video rounded-lg bg-black" />
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        
+        {/* Главная сцена (Слайдер / Видео) - 3 колонки */}
+        <div className="lg:col-span-3 bg-white border border-slate-200/60 rounded-xl p-2 shadow-sm">
+          {isCompleted && task.original_file_url && task.download_url ? (
+            isVideo ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                <div className="relative group">
+                  <div className="absolute top-3 left-3 z-10 bg-black/40 backdrop-blur-md text-white/90 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-widest">Оригинал</div>
+                  <video src={task.original_file_url} controls className="w-full aspect-video rounded bg-slate-900" />
                 </div>
-              ) : (
-                // Рендер для Фото: Наш Слайдер
-                <BeforeAfterSlider 
-                  beforeImage={task.original_file_url} 
-                  afterImage={task.download_url} 
-                />
-              )
+                <div className="relative group">
+                  <div className="absolute top-3 left-3 z-10 bg-blue-600/80 backdrop-blur-md text-white/90 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-widest">Результат</div>
+                  <video src={task.download_url} controls className="w-full aspect-video rounded bg-slate-900" />
+                </div>
+              </div>
             ) : (
-              // Заглушка, если задача ещё обрабатывается или сломалась
-              <div className="aspect-video bg-slate-900 rounded-xl flex items-center justify-center relative overflow-hidden">
-                {task.original_file_url && (
-                  <img src={task.original_file_url} alt="preview" className="absolute inset-0 w-full h-full object-cover opacity-30" />
-                )}
-                <div className="relative z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md p-8 rounded-2xl border border-white/10">
-                  <Activity className="w-12 h-12 text-blue-400 mb-4 animate-pulse" />
-                  <h3 className="text-white text-xl font-medium mb-2">Файл в обработке</h3>
-                  <Badge variant="outline" className="text-white border-white/30">{task.status}</Badge>
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* Сайдбар: Метаданные (Занимает 1 колонку) */}
-        <div className="space-y-6">
-          <Card className="p-6 border-slate-200 shadow-sm bg-white/50 backdrop-blur-sm rounded-2xl">
-            <h3 className="text-lg font-semibold text-slate-900 mb-6">Детали задачи</h3>
-            
-            <div className="space-y-5">
-              <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                <div className="flex items-center text-slate-500">
-                  {isVideo ? <Video className="w-4 h-4 mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
-                  <span className="text-sm font-medium">Файл</span>
-                </div>
-                <span className="text-sm font-semibold text-slate-900 truncate max-w-[140px]" title={task.original_filename}>
-                  {task.original_filename}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                <div className="flex items-center text-slate-500">
-                  <Activity className="w-4 h-4 mr-2" />
-                  <span className="text-sm font-medium">Алгоритм</span>
-                </div>
-                <Badge variant="secondary" className="capitalize px-3 py-1">{task.filter_type || '—'}</Badge>
-              </div>
-
-              <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                <div className="flex items-center text-slate-500">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  <span className="text-sm font-medium">Дата</span>
-                </div>
-                <span className="text-sm font-medium text-slate-900">
-                  {new Date(task.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              
-              <div className="pt-2">
-                 <div className="text-sm font-medium text-slate-500 mb-3">Текущий статус</div>
-                 <div className={`w-full p-4 rounded-xl border flex items-center justify-center font-semibold text-sm transition-colors ${
-                    task.status === 'COMPLETED' ? 'bg-green-50 border-green-200 text-green-700' : 
-                    task.status === 'FAILED' ? 'bg-red-50 border-red-200 text-red-700' : 
-                    'bg-blue-50 border-blue-200 text-blue-700 animate-pulse'
-                 }`}>
-                    {task.status === 'COMPLETED' ? 'Успешно завершено' : 
-                     task.status === 'FAILED' ? 'Ошибка обработки' : 
-                     'В процессе выполнения...'}
-                 </div>
+              <BeforeAfterSlider 
+                beforeImage={task.original_file_url} 
+                afterImage={task.download_url} 
+              />
+            )
+          ) : (
+            <div className="aspect-video bg-slate-50 rounded-lg flex items-center justify-center relative overflow-hidden border border-slate-100">
+              {task.original_file_url && (
+                <img src={task.original_file_url} alt="preview" className="absolute inset-0 w-full h-full object-cover opacity-10 grayscale" />
+              )}
+              <div className="relative z-10 flex flex-col items-center text-slate-500">
+                <Activity className="w-8 h-8 text-blue-500 mb-3 animate-pulse" />
+                <p className="text-sm font-medium uppercase tracking-widest">Обработка нейросетью...</p>
               </div>
             </div>
-          </Card>
+          )}
+        </div>
+
+        {/* Инспектор свойств (Сайдбар) - 1 колонка */}
+        <div className="lg:col-span-1 flex flex-col gap-6 sticky top-24">
+          
+          {/* Главное действие вынесено наверх для быстрого доступа */}
+          {isCompleted && task.download_url && (
+            <a href={task.download_url} download={task.original_filename} target="_blank" rel="noopener noreferrer" className="block w-full">
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-10">
+                <Download className="w-4 h-4 mr-2" />
+                Скачать результат
+              </Button>
+            </a>
+          )}
+
+          <div className="bg-white border border-slate-200/60 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100">
+              <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">Свойства файла</h3>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              {/* Параметр: Тип */}
+              <div className="flex justify-between items-start">
+                <span className="text-[11px] uppercase tracking-wide text-slate-500 flex items-center mt-0.5">
+                  {isVideo ? <Video className="w-3.5 h-3.5 mr-1.5" /> : <ImageIcon className="w-3.5 h-3.5 mr-1.5" />}
+                  Формат
+                </span>
+                <span className="text-sm font-medium text-slate-900 text-right uppercase">
+                  {isVideo ? 'Видео' : 'Изображение'}
+                </span>
+              </div>
+
+              <Separator className="bg-slate-100" />
+
+              {/* Параметр: Алгоритм */}
+              <div className="flex justify-between items-start">
+                <span className="text-[11px] uppercase tracking-wide text-slate-500 flex items-center mt-0.5">
+                  <Activity className="w-3.5 h-3.5 mr-1.5" />
+                  Алгоритм
+                </span>
+                <span className="text-sm font-medium text-slate-900 text-right capitalize">
+                  {task.filter_type || '—'}
+                </span>
+              </div>
+
+              <Separator className="bg-slate-100" />
+
+              {/* Параметр: Дата */}
+              <div className="flex justify-between items-start">
+                <span className="text-[11px] uppercase tracking-wide text-slate-500 flex items-center mt-0.5">
+                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  Создано
+                </span>
+                <span className="text-sm font-medium text-slate-900 text-right">
+                  {new Date(task.created_at).toLocaleDateString('ru-RU')}
+                </span>
+              </div>
+
+              <Separator className="bg-slate-100" />
+
+              {/* Параметр: Статус */}
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] uppercase tracking-wide text-slate-500 flex items-center">
+                  <FileCheck2 className="w-3.5 h-3.5 mr-1.5" />
+                  Статус
+                </span>
+                {renderStatusIndicator(task.status)}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
