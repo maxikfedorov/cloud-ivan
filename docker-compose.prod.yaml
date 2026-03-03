@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:15.6-alpine
+    container_name: yolo_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.2.4-alpine
+    container_name: yolo_redis
+    restart: always
+
+  minio:
+    image: minio/minio:RELEASE.2024-06-26T01-06-18Z
+    container_name: yolo_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # В проде здесь будет твой реальный домен фронтенда
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  cv_worker:
+    image: xedzer/visionflow-worker:latest
+    container_name: yolo_worker
+    restart: always
+    depends_on:
+      - redis
+      - minio
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_BUCKET_NAME=media-bucket
+      # Путь к модели внутри образа (запечены)
+      - ONNX_MODEL_PATH=/app/models/best.onnx
+
+  api:
+    image: xedzer/visionflow-api:latest
+    container_name: yolo_api
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_PUBLIC_ENDPOINT_URL=http://localhost:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_BUCKET_NAME=media-bucket
+
+  frontend:
+    image: xedzer/visionflow-frontend:latest
+    container_name: yolo_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+volumes:
+  pg_data:
+  minio_data:
